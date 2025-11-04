@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h2>Категорії</h2>
+  <div class="grid">
+    {% for cat in categories %}
+      <a class="card" href="/category/{{ cat }}">
+        <h3>{{ cat }}</h3>
+        <ul>
+          {% for p in preview[cat] %}
+            <li>{{ p.name }} — {{ '%.2f'|format(p.price) }} грн</li>
+          {% endfor %}
+        </ul>
+        <div class="muted">Переглянути всі →</div>
+      </a>
+    {% endfor %}
+  </div>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h2>Категорія: {{ category }}</h2>
+  <div class="grid">
+    {% for p in products %}
+      <div class="card">
+        <h3>{{ p.name }}</h3>
+        <p class="muted">SKU: {{ p.sku }}</p>
+        <p class="price">{{ '%.2f'|format(p.price) }} грн</p>
+        <p>В наявності: {{ p.stock_qty }}</p>
+        <form method="post" action="/cart/add">
+          <input type="hidden" name="product_id" value="{{ p.id }}">
+          <input type="number" name="qty" value="1" min="1" style="width:80px">
+          <button class="btn" type="submit">Додати в кошик</button>
+        </form>
+      </div>
+    {% endfor %}
+  </div>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h2>Ваш кошик</h2>
+  {% if items %}
+    <div class="grid">
+      {% for i in items %}
+        <div class="card">
+          <h3>{{ i.name }}</h3>
+          <p>Кількість: {{ i.qty }}</p>
+          <p class="price">Сума: {{ '%.2f'|format(i.line_total) }} грн</p>
+          <form method="post" action="/cart/remove">
+            <input type="hidden" name="product_id" value="{{ i.product_id }}">
+            <button class="btn" type="submit">Прибрати</button>
+          </form>
+        </div>
+      {% endfor %}
+    </div>
+    <h3>Разом: {{ '%.2f'|format(subtotal) }} грн</h3>
+  {% else %}
+    <p class="muted">Кошик порожній.</p>
+  {% endif %}
+{% endblock %}
