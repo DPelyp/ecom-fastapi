@@ -1,98 +1,379 @@
 # app/main.py
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, HTTPException, Form
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from .catalog_seed import seed_catalog
-from decimal import Decimal
-from uuid import uuid4
+from urllib.parse import quote_plus  # для безпечного прокидування name у URL
+
+# runtime-шари
+from .cart_runtime import get_or_create_cid, get_cart, CATALOG
 
 app = FastAPI(title="Ecom MVP")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
-CATALOG = seed_catalog()
 
-# ---- In-memory cart (cookie 'cid')
-class CartItem:
-    def __init__(self, product_id: int, name: str, price: Decimal, qty: int = 1):
-        self.product_id = product_id
-        self.name = name
-        self.price = Decimal(str(price))
-        self.qty = int(qty)
-    @property
-    def line_total(self) -> Decimal:
-        return self.price * self.qty
 
-class Cart:
-    def __init__(self):
-        self.items: dict[int, CartItem] = {}
-    def add(self, product_id: int, name: str, price: Decimal, qty: int = 1):
-        if product_id in self.items:
-            self.items[product_id].qty += qty
+# ---------- нормалізатори кошика ----------
+def _iter_cart_items(cart):
+    """
+    Ітератор по позиціях кошика у будь-якому форматі.
+      - dict: {pid: qty} або {pid: {"qty": N}}
+      - list: [{"product_id"|"pid"|"id": pid, "qty": N}]
+    Повертає (pid_int, qty_int)
+    """
+    items = getattr(cart, "items", None) or {}
+
+    # dict-формат
+    if isinstance(items, dict):
+        for k, v in items.items():
+            try:
+                pid = int(k)
+            except Exception:
+                pid = int(str(k))
+
+            if isinstance(v, dict):
+                qty = int(v.get("qty", 0))
+            else:
+                qty = int(v)
+
+            if qty > 0:
+                yield pid, qty
+        return
+
+    # list-формат
+    if isinstance(items, list):
+        for row in items:
+            if not isinstance(row, dict):
+                continue
+            pid_raw = row.get("product_id", row.get("pid", row.get("id")))
+            if pid_raw is None:
+                continue
+            try:
+                pid = int(pid_raw)
+            except Exception:
+                pid = int(str(pid_raw))
+            qty = int(row.get("qty", 0))
+            if qty > 0:
+                yield pid, qty
+        return
+
+    # інші варіанти — нічого
+    return
+
+
+def _cart_qty(cart) -> int:
+    """Підрахунок кількості товарів у кошику незалежно від структури."""
+    try:
+        if hasattr(cart, "count") and callable(getattr(cart, "count")):
+            return int(cart.count())
+    except Exception:
+        pass
+
+    total = 0
+    try:
+        for _, q in _iter_cart_items(cart):
+            total += int(q)
+    except Exception:
+        return 0
+    return total
+
+
+# ---------- шіми для додавання/видалення ----------
+def _cart_add(cart, product_id: int, qty: int):
+    """
+    Додає товар у кошик, навіть якщо немає add_item().
+    Спроби:
+      1) add_item / add / add_product / add_to_cart
+      2) ручне оновлення cart.items (+ зменшення складу, якщо знайдемо товар)
+    """
+    # офіційні методи, якщо є
+    for m in ("add_item", "add", "add_product", "add_to_cart"):
+        fn = getattr(cart, m, None)
+        if callable(fn):
+            return fn(int(product_id), int(qty))
+
+    # ручний режим
+    pid = int(product_id)
+    q = int(qty)
+
+    # знайти товар і перевірити склад
+    p = None
+    try:
+        p = cart._find_product(pid)
+    except Exception:
+        p = None
+
+    if p is not None:
+        stock_attr = "stock_qty" if hasattr(p, "stock_qty") \
+                     else ("stock" if hasattr(p, "stock") else None)
+        if stock_attr:
+            cur = getattr(p, stock_attr, 0) or 0
+            if int(cur) < q:
+                raise ValueError("Not enough stock")
+            try:
+                setattr(p, stock_attr, int(cur) - q)
+            except Exception:
+                pass
+
+    # оновлюємо items
+    items = getattr(cart, "items", None)
+    if items is None:
+        items = {}
+        setattr(cart, "items", items)
+
+    if isinstance(items, dict):
+        if pid in items:
+            if isinstance(items[pid], dict):
+                items[pid]["qty"] = int(items[pid].get("qty", 0)) + q
+            else:
+                items[pid] = int(items[pid]) + q
         else:
-            self.items[product_id] = CartItem(product_id, name, price, qty)
-    def remove(self, product_id: int):
-        self.items.pop(product_id, None)
-    def count(self) -> int:
-        return sum(i.qty for i in self.items.values())
-    def subtotal(self) -> Decimal:
-        return sum((i.line_total for i in self.items.values()), Decimal("0"))
+            items[pid] = q
+        return
 
-CARTS: dict[str, Cart] = {}
+    if isinstance(items, list):
+        for row in items:
+            if not isinstance(row, dict):
+                continue
+            rid = row.get("product_id", row.get("pid", row.get("id", -1)))
+            try:
+                rid = int(rid)
+            except Exception:
+                try:
+                    rid = int(str(rid))
+                except Exception:
+                    rid = -1
+            if rid == pid:
+                row["qty"] = int(row.get("qty", 0)) + q
+                return
+        items.append({"product_id": pid, "qty": q})
+        return
 
-def _get_or_create_cid(request: Request) -> str:
-    cid = request.cookies.get("cid")
-    if not cid:
-        cid = uuid4().hex
-    if cid not in CARTS:
-        CARTS[cid] = Cart()
-    return cid
+    # якщо структура невідома — перезапис як dict
+    setattr(cart, "items", {pid: q})
 
+
+def _cart_remove(cart, product_id: int):
+    """
+    Видаляє позицію з кошика, навіть якщо немає remove_item().
+    Повертає кількість, яку прибрали (для повернення на склад за бажанням).
+    """
+    for m in ("remove_item", "remove", "delete", "remove_from_cart"):
+        fn = getattr(cart, m, None)
+        if callable(fn):
+            return fn(int(product_id))
+
+    pid = int(product_id)
+    items = getattr(cart, "items", None)
+    removed_qty = 0
+
+    if isinstance(items, dict):
+        if pid in items:
+            v = items.pop(pid)
+            removed_qty = int(v.get("qty", v)) if isinstance(v, dict) else int(v)
+
+    elif isinstance(items, list):
+        keep = []
+        for row in items:
+            if not isinstance(row, dict):
+                keep.append(row)
+                continue
+            rid = row.get("product_id", row.get("pid", row.get("id", -1)))
+            try:
+                rid = int(rid)
+            except Exception:
+                try:
+                    rid = int(str(rid))
+                except Exception:
+                    rid = -1
+            if rid == pid:
+                removed_qty = int(row.get("qty", 0))
+            else:
+                keep.append(row)
+        setattr(cart, "items", keep)
+
+    return removed_qty
+
+
+# ---------- рендер-хелпер ----------
 def _render(request: Request, template: str, ctx: dict):
-    cid = _get_or_create_cid(request)
-    cart = CARTS[cid]
-    ctx.update({"request": request, "cart_count": cart.count()})
+    """Прокидує request та лічильник кошика у всі шаблони."""
+    cid = get_or_create_cid(request)
+    cart = get_cart(cid)
+    qty = _cart_qty(cart)
+
+    ctx.update({
+        "request": request,
+        "cart_count": qty,  # для старих шаблонів
+        "cart_qty": qty,    # для нових
+    })
     return templates.TemplateResponse(template, ctx)
 
-# ---- Routes
-@app.get("/", response_class=HTMLResponse)
+
+# ---------- routes ----------
+@app.get("/", name="catalog", response_class=HTMLResponse)
 async def home(request: Request):
     categories = CATALOG.list_categories()
     preview = {name: CATALOG.get_products(name)[:3] for name in categories}
     resp = _render(request, "index.html", {"categories": categories, "preview": preview})
     if not request.cookies.get("cid"):
-        resp.set_cookie("cid", _get_or_create_cid(request))
+        resp.set_cookie("cid", get_or_create_cid(request))
     return resp
 
-@app.get("/category/{name}", response_class=HTMLResponse)
+
+@app.get("/category/{name}", name="category", response_class=HTMLResponse)
 async def category_page(name: str, request: Request):
     products = CATALOG.get_products(name)
     if not products:
         raise HTTPException(404, detail="category_not_found_or_empty")
-    return _render(request, "category.html", {"category": name, "products": products})
+    resp = _render(request, "category.html", {"category": name, "products": products})
+    if not request.cookies.get("cid"):
+        resp.set_cookie("cid", get_or_create_cid(request))
+    return resp
 
-@app.get("/cart", response_class=HTMLResponse)
+
+@app.get("/cart", name="cart", response_class=HTMLResponse)
 async def view_cart(request: Request):
-    cid = _get_or_create_cid(request)
-    cart = CARTS[cid]
-    return _render(request, "cart.html", {"items": list(cart.items.values()), "subtotal": cart.subtotal()})
+    cid = get_or_create_cid(request)
+    cart = get_cart(cid)
 
-@app.post("/cart/add")
-async def add_to_cart(request: Request):
-    form = await request.form()
-    pid = int(form.get("product_id"))
-    qty = int(form.get("qty", 1))
-    product = CATALOG.get_product_by_id(pid)
-    if not product:
-        raise HTTPException(404, detail="product_not_found")
-    cid = _get_or_create_cid(request)
-    CARTS[cid].add(product.id, product.name, product.price, qty)
-    return RedirectResponse(url="/cart", status_code=303)
+    items = []
+    for pid, qty in _iter_cart_items(cart):
+        # витягуємо продукт
+        p = None
+        try:
+            p = cart._find_product(pid)
+        except Exception:
+            p = None
+        if not p:
+            continue
 
-@app.post("/cart/remove")
+        # ціна -> float
+        try:
+            price = float(p.price)
+        except Exception:
+            price = float(str(p.price))
+
+        items.append({
+            "product": {
+                "id": pid,
+                "name": getattr(p, "name", ""),
+                "sku": getattr(p, "sku", ""),
+                "price": price,
+            },
+            "qty": int(qty),
+            "line_total": round(price * int(qty), 2),
+        })
+
+    total = round(sum(i["line_total"] for i in items), 2)
+
+    q = request.query_params
+    ctx = {
+        "items": items,
+        "total": total,
+        "subtotal": total,  # сумісність з іншою назвою
+        "added": q.get("added"),
+        "pid": q.get("pid"),
+        "name": q.get("name"),
+        "qty": q.get("qty"),
+        "error": q.get("error"),
+    }
+    resp = _render(request, "cart.html", ctx)
+    if not request.cookies.get("cid"):
+        resp.set_cookie("cid", cid)
+    return resp
+
+
+@app.get("/cart/add", name="cart_add_get")
+async def cart_add_get_redirect():
+    return RedirectResponse("/", status_code=303)
+
+
+@app.post("/cart/add", name="cart_add")
+async def add_to_cart(
+    request: Request,
+    product_id: int = Form(...),
+    qty: int = Form(1),
+):
+    # нормалізуємо кількість
+    try:
+        qty = int(qty)
+    except Exception:
+        qty = 1
+    if qty <= 0:
+        qty = 1
+
+    cid = get_or_create_cid(request)
+    cart = get_cart(cid)
+
+    try:
+        pid = int(product_id)
+        _cart_add(cart, pid, qty)  # шім: додає незалежно від API
+        if hasattr(cart, "save") and callable(getattr(cart, "save")):
+            try:
+                cart.save()
+            except Exception:
+                pass
+
+        p = None
+        try:
+            p = cart._find_product(pid)
+        except Exception:
+            p = None
+        name = getattr(p, "name", f"#{pid}") if p else f"#{pid}"
+    except KeyError:
+        return RedirectResponse("/?error=product_not_found", status_code=303)
+    except ValueError as e:
+        return RedirectResponse(f"/?error={str(e)}", status_code=303)
+    except Exception as e:
+        print("ADD_TO_CART_FATAL:", repr(e))
+        return RedirectResponse("/?error=internal", status_code=303)
+
+    # кодуємо name для URL
+    name_q = quote_plus(name)
+    resp = RedirectResponse(
+        url=f"/cart?added=1&pid={pid}&name={name_q}&qty={qty}",
+        status_code=303,
+    )
+    if not request.cookies.get("cid"):
+        resp.set_cookie("cid", cid)
+    return resp
+
+
+@app.post("/cart/remove", name="cart_remove")
 async def remove_from_cart(request: Request):
     form = await request.form()
     pid = int(form.get("product_id"))
-    cid = _get_or_create_cid(request)
-    CARTS[cid].remove(pid)
-    return RedirectResponse(url="/cart", status_code=303)
+    next_url = form.get("next_url") or "/cart"
+
+    cid = get_or_create_cid(request)
+    cart = get_cart(cid)
+
+    try:
+        removed_qty = _cart_remove(cart, pid)  # шім: видаляє незалежно від API
+
+        # повернемо на склад, якщо знайдемо товар і є поле stock/stock_qty
+        p = None
+        try:
+            p = cart._find_product(pid)
+        except Exception:
+            p = None
+        if p is not None and removed_qty > 0:
+            stock_attr = "stock_qty" if hasattr(p, "stock_qty") \
+                         else ("stock" if hasattr(p, "stock") else None)
+            if stock_attr:
+                try:
+                    cur = int(getattr(p, stock_attr, 0) or 0)
+                    setattr(p, stock_attr, cur + int(removed_qty))
+                except Exception:
+                    pass
+
+        if hasattr(cart, "save") and callable(getattr(cart, "save")):
+            try:
+                cart.save()
+            except Exception:
+                pass
+    except Exception as e:
+        print("CART_REMOVE_WARN:", repr(e))
+
+    return RedirectResponse(url=next_url, status_code=303)

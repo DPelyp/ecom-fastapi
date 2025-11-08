@@ -1,21 +1,69 @@
 <!doctype html>
-<html lang="uk">
+<html lang="uk" data-theme="">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>{{ title if title else 'Магазин' }}</title>
-  <link rel="stylesheet" href="/static/styles.css" />
+  <title>{{ title if title is defined and title else 'Магазин' }}</title>
+
+  <!-- базовий префікс -->
+  <base href="{{ base_url if base_url is defined and base_url else '/' }}">
+
+  <!-- стилі -->
+  <link rel="stylesheet" href="/static/styles.css?v=6" />
 </head>
 <body>
-  <header class="container">
-    <h1><a href="/">🏋️ Спорттовари</a></h1>
-    <nav>
-      <a href="/">Каталог</a>
-      <a href="/cart">Кошик ({{ cart_count or 0 }})</a>
-    </nav>
+  <header class="container" style="justify-content:space-between;">
+    <div style="display:flex;gap:28px;align-items:center">
+      <h1 style="margin-right:8px">
+        <a href="{{ base_url if base_url is defined and base_url else '/' }}">🏋️ Спортивні товари</a>
+      </h1>
+      <nav>
+        <a href="{{ base_url if base_url is defined and base_url else '/' }}">Каталог</a>
+        <a href="{{ (base_url if base_url is defined and base_url else '/') ~ 'cart' }}">
+          Кошик <span class="badge">{{ (cart_qty if cart_qty is defined else (cart_count if cart_count is defined else 0)) }}</span>
+        </a>
+      </nav>
+    </div>
+
+    <!-- перемикач теми -->
+    <button id="themeToggle" class="btn btn-outline" style="padding:8px 12px;border-radius:10px;font-weight:600">
+      🌙 Темна
+    </button>
   </header>
+
   <main class="container">
     {% block content %}{% endblock %}
   </main>
+
+  <script>
+    (function () {
+      const root = document.documentElement;
+      const KEY = "theme";
+      const saved = localStorage.getItem(KEY);
+
+      // якщо збережена тема є — ставимо її; інакше читаємо системну
+      if (saved === "light" || saved === "dark") {
+        root.setAttribute("data-theme", saved === "light" ? "light" : "");
+      } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) {
+        root.setAttribute("data-theme", "light");
+      }
+
+      const btn = document.getElementById("themeToggle");
+      function updateBtn() {
+        const isLight = root.getAttribute("data-theme") === "light";
+        btn.textContent = isLight ? "🌞 Світла" : "🌙 Темна";
+      }
+      updateBtn();
+
+      btn.addEventListener("click", () => {
+        const isLight = root.getAttribute("data-theme") === "light";
+        const next = isLight ? "dark" : "light";
+        if (next === "light") root.setAttribute("data-theme", "light");
+        else root.removeAttribute("data-theme"); // темна — значення за замовчуванням
+        localStorage.setItem(KEY, next);
+        updateBtn();
+      });
+    })();
+  </script>
 </body>
 </html>

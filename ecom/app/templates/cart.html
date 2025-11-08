@@ -1,22 +1,48 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% block content %}
-  <h2>Ваш кошик</h2>
-  {% if items %}
+  <h2>Кошик</h2>
+
+  {# опціональний банер після додавання #}
+  {% if added %}
+    <div class="alert">
+      ✅ {{ name or ('ID ' ~ pid) }} (x{{ qty or 1 }}) додано до кошика.
+    </div>
+  {% endif %}
+
+  {% if not items or items|length == 0 %}
+    <p class="muted">Кошик порожній.</p>
+  {% else %}
     <div class="grid">
-      {% for i in items %}
+      {% for row in items %}
+        {# Підтримка як dict-структури, так і об’єктів #}
+        {% set p = (row['product'] if row is mapping else row.product) %}
+        {% set pname = (p['name'] if p is mapping else p.name) %}
+        {% set psku  = (p['sku']  if p is mapping else p.sku) %}
+        {% set pid   = (p['id']   if p is mapping else p.id) %}
+        {% set qty   = (row['qty'] if row is mapping else row.qty) %}
+        {% set ltot  = (row['line_total'] if row is mapping else row.line_total) %}
+
         <div class="card">
-          <h3>{{ i.name }}</h3>
-          <p>Кількість: {{ i.qty }}</p>
-          <p class="price">Сума: {{ '%.2f'|format(i.line_total) }} грн</p>
-          <form method="post" action="/cart/remove">
-            <input type="hidden" name="product_id" value="{{ i.product_id }}">
-            <button class="btn" type="submit">Прибрати</button>
+          <h3 style="margin:0 0 6px 0">{{ pname or 'Товар' }}</h3>
+          <div class="sku">SKU: {{ psku or '—' }}</div>
+
+          <p>Кількість: <strong>{{ qty|int }}</strong></p>
+          <p>Сума: <strong>{{ "%.2f"|format((ltot|float)) }} грн</strong></p>
+
+          <form method="post" action="{{ url_for('cart_remove') }}">
+            <input type="hidden" name="product_id" value="{{ pid }}">
+            <input type="hidden" name="next_url" value="{{ request.url }}">
+            <button class="btn">Видалити</button>
           </form>
         </div>
       {% endfor %}
     </div>
-    <h3>Разом: {{ '%.2f'|format(subtotal) }} грн</h3>
-  {% else %}
-    <p class="muted">Кошик порожній.</p>
+
+    <p style="margin-top:16px">
+      Разом:
+      {# total/subtotal — підтримка обох назв #}
+      {% set grand = (total if total is defined else subtotal) %}
+      <strong>{{ "%.2f"|format((grand|float)) }} грн</strong>
+    </p>
   {% endif %}
 {% endblock %}

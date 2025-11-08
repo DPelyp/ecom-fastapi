@@ -1,17 +1,38 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% block content %}
   <h2>Категорії</h2>
+
   <div class="grid">
-    {% for cat in categories %}
-      <a class="card" href="/category/{{ cat }}">
-        <h3>{{ cat }}</h3>
-        <ul>
-          {% for p in preview[cat] %}
-            <li>{{ p.name }} — {{ '%.2f'|format(p.price) }} грн</li>
-          {% endfor %}
-        </ul>
-        <div class="muted">Переглянути всі →</div>
-      </a>
+    {% for name in categories %}
+      <div class="card category-card">
+        <h3>
+          <a href="{{ (base_url if base_url is defined and base_url else '/') ~ 'category/' ~ name }}">
+            {{ name }}
+          </a>
+        </h3>
+
+        {% set items = preview[name] if preview is defined and name in preview else [] %}
+        {% if items and items|length > 0 %}
+          <ul class="category-preview">
+            {% for p in items %}
+              {% set pname = (p['name'] if p is mapping else p.name) %}
+              {% set pprice_raw = (p['price'] if p is mapping else p.price) %}
+              {% set pprice = ('%.2f'|format(pprice_raw)) %}
+              <li>
+                <a href="{{ (base_url if base_url is defined and base_url else '/') ~ 'category/' ~ name }}">
+                  {{ pname }} — {{ pprice }} грн
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="muted">Поки що без товарів.</p>
+        {% endif %}
+
+        <a class="footer-link" href="{{ (base_url if base_url is defined and base_url else '/') ~ 'category/' ~ name }}">
+          Переглянути всі →
+        </a>
+      </div>
     {% endfor %}
   </div>
 {% endblock %}
