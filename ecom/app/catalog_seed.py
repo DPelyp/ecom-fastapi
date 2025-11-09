@@ -38,7 +38,7 @@ def seed_catalog() -> GoodsCategories:
     cats._by_id[106].description = "Пара тренувальних лап із вигином під долоню та щільною амортизацією. Перфорація відводить тепло, кріплення фіксує руку під час серій."
 
     cats.add_product("MMA", Product(107, "SKU-007", "Кимоно для бойових мистецтв", 1800.00, 6))
-    cats._by_id[107].image_url = "/static/mma/kimono.webp"
+    cats._by_id[107].image_url = "/static/mma/kimono.jpg"
     cats._by_id[107].description = "Кімоно для BJJ/джіу-джитсу зі щільної плетінки (≈350–450 gsm) та підсиленими швами. Зручний крій для партеру; пояс у комплект не входить."
 
     cats.add_product("MMA", Product(108, "SKU-008", "Щит для ударів (тайський пад)", 950.00, 9))

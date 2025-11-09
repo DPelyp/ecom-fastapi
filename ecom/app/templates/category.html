@@ -30,34 +30,38 @@
           {% if p.description %}
             <p class="desc">{{ p.description|e }}</p>
           {% endif %}
+        </div>
 
+        {# ---------- ФУТЕР КАРТКИ: В наявності + форма ---------- #}
+        <div class="product-footer">
           <p class="stock {% if p.stock_qty == 0 %}out-of-stock{% endif %}">
             В наявності: {{ p.stock_qty }}
           </p>
+
+          <form method="post" action="/cart/add" class="add-form">
+            <input type="hidden" name="product_id" value="{{ p.id }}">
+            <label class="visually-hidden" for="qty-{{ p.id }}">Кількість</label>
+            <input
+              id="qty-{{ p.id }}"
+              class="qty-input"
+              type="number"
+              name="qty"
+              value="1"
+              min="1"
+              {% if p.stock_qty %}max="{{ p.stock_qty }}"{% endif %}
+              {% if p.stock_qty == 0 %}disabled{% endif %}
+            >
+            <button
+              class="btn"
+              type="submit"
+              {% if p.stock_qty == 0 %}disabled aria-disabled="true"{% endif %}
+              aria-label="Додати «{{ p.name|e }}» до кошика"
+            >
+              {% if p.stock_qty == 0 %}Немає в наявності{% else %}Додати в кошик{% endif %}
+            </button>
+          </form>
         </div>
 
-        <form method="post" action="/cart/add" class="add-form">
-          <input type="hidden" name="product_id" value="{{ p.id }}">
-          <label class="visually-hidden" for="qty-{{ p.id }}">Кількість</label>
-          <input
-            id="qty-{{ p.id }}"
-            class="qty-input"
-            type="number"
-            name="qty"
-            value="1"
-            min="1"
-            {% if p.stock_qty %}max="{{ p.stock_qty }}"{% endif %}
-            {% if p.stock_qty == 0 %}disabled{% endif %}
-          >
-          <button
-            class="btn"
-            type="submit"
-            {% if p.stock_qty == 0 %}disabled aria-disabled="true"{% endif %}
-            aria-label="Додати «{{ p.name|e }}» до кошика"
-          >
-            {% if p.stock_qty == 0 %}Немає в наявності{% else %}Додати в кошик{% endif %}
-          </button>
-        </form>
       </div>
     {% endfor %}
   </div>
