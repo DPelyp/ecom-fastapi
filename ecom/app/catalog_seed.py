@@ -54,8 +54,6 @@ def seed_catalog() -> GoodsCategories:
     cats.add_product("Swimming", Product(206, "SKU-016", "Плавки чоловічі Joss", 370.00, 30))
     cats.add_product("Swimming", Product(207, "SKU-017", "Купальник жіночий Arena", 780.00, 25))
     cats.add_product("Swimming", Product(208, "SKU-018", "Рушник мікрофібра 70×140", 310.00, 50))
-    cats.add_product("Swimming", Product(209, "SKU-019", "Сумка для басейну 25L", 490.00, 18))
-    cats.add_product("Swimming", Product(210, "SKU-020", "Плавальна дощечка дитяча", 290.00, 40))
 
     # --- HIKING ---
     cats.add_product("Hiking", Product(301, "SKU-021", "Рюкзак трекінговий 45L", 2100.00, 8))
@@ -66,9 +64,6 @@ def seed_catalog() -> GoodsCategories:
     cats.add_product("Hiking", Product(306, "SKU-026", "Термокружка 0.5L", 320.00, 35))
     cats.add_product("Hiking", Product(307, "SKU-027", "Трекінгові палиці 135см", 980.00, 16))
     cats.add_product("Hiking", Product(308, "SKU-028", "Кросівки трекінгові Salewa", 3450.00, 9))
-    cats.add_product("Hiking", Product(309, "SKU-029", "Намет 2-місний Coleman", 5200.00, 5))
-    cats.add_product("Hiking", Product(310, "SKU-030", "Павербанк 20 000 mAh з сонячною панеллю", 1150.00, 14))
-
     # --- CYCLING (Велоспорт) ---
     cats.add_product("Cycling", Product(401, "SKU-041", "Велосипедний шолом MTB", 1250.00, 18))
     cats.add_product("Cycling", Product(402, "SKU-042", "Рукавички велосипедні", 390.00, 40))
@@ -78,10 +73,6 @@ def seed_catalog() -> GoodsCategories:
     cats.add_product("Cycling", Product(406, "SKU-046", "Сідло гелеве Comfort", 860.00, 20))
     cats.add_product("Cycling", Product(407, "SKU-047", "Ланцюг 11-швидк. KMC", 890.00, 28))
     cats.add_product("Cycling", Product(408, "SKU-048", "Камера 29\" x 2.10 (AV)", 210.00, 60))
-    cats.add_product("Cycling", Product(409, "SKU-049", "Пляшка для води 750 мл", 190.00, 55))
-    cats.add_product("Cycling", Product(410, "SKU-050", "Фляготримач алюмінієвий", 220.00, 45))
-    cats.add_product("Cycling", Product(411, "SKU-051", "Велокомп'ютер бездротовий", 1350.00, 12))
-    cats.add_product("Cycling", Product(412, "SKU-052", "Педалі контактні SPD", 1750.00, 14))
 
     return cats
 
