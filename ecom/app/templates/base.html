@@ -77,7 +77,7 @@
   </main>
 
   <footer class="container">
-    © 2025 Sport Store MVP
+    © 2025 Sport Store by Dmytro Pelyp
   </footer>
 
   <!-- Toast контейнер -->
@@ -137,7 +137,10 @@
       }
 
       if (added) {
-        const niceName = name ? decodeURIComponent(name) : ("ID " + (pid || ""));
+        const niceName = name 
+          ? decodeURIComponent(name).replace(/\+/g, " ") 
+          : ("ID " + (pid || ""));
+
         const qtyNum = qty ? parseInt(qty, 10) : 1;
         const cartUrl = "{{ (base_url if base_url is defined and base_url else '/') ~ 'cart' }}";
         showToast(`
