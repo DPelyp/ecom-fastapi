@@ -3,7 +3,7 @@ from fastapi import FastAPI, Request, HTTPException, Form
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from urllib.parse import quote_plus  # для безпечного прокидування name у URL
+from urllib.parse import quote_plus, urlparse, parse_qs, urlencode, urlunparse
 
 # runtime-шари
 from .cart_runtime import get_or_create_cid, get_cart, CATALOG
@@ -11,6 +11,27 @@ from .cart_runtime import get_or_create_cid, get_cart, CATALOG
 app = FastAPI(title="Ecom MVP")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
+
+
+# ---------- утиліта для безпечного додавання query-параметрів ----------
+def _url_with_params(base_url: str, **params) -> str:
+    """
+    Акуратно додає/оновлює query-параметри у будь-який URL (враховуючи referer з абсолютом/відносним шляхом).
+    Якщо щось піде не так — повертає корінь з потрібними параметрами.
+    """
+    try:
+        p = urlparse(base_url)
+        q = parse_qs(p.query)
+        for k, v in params.items():
+            if v is None:
+                q.pop(k, None)
+            else:
+                q[k] = [str(v)]
+        new_q = urlencode(q, doseq=True)
+        return urlunparse((p.scheme, p.netloc, p.path, p.params, new_q, p.fragment))
+    except Exception:
+        qs = urlencode({k: v for k, v in params.items() if v is not None})
+        return "/" + (f"?{qs}" if qs else "")
 
 
 # ---------- нормалізатори кошика ----------
@@ -104,8 +125,7 @@ def _cart_add(cart, product_id: int, qty: int):
         p = None
 
     if p is not None:
-        stock_attr = "stock_qty" if hasattr(p, "stock_qty") \
-                     else ("stock" if hasattr(p, "stock") else None)
+        stock_attr = "stock_qty" if hasattr(p, "stock_qty") else ("stock" if hasattr(p, "stock") else None)
         if stock_attr:
             cur = getattr(p, stock_attr, 0) or 0
             if int(cur) < q:
@@ -197,15 +217,27 @@ def _cart_remove(cart, product_id: int):
 
 # ---------- рендер-хелпер ----------
 def _render(request: Request, template: str, ctx: dict):
-    """Прокидує request та лічильник кошика у всі шаблони."""
     cid = get_or_create_cid(request)
     cart = get_cart(cid)
+
+    # ---- визначаємо route для фону
+    path = request.url.path
+    if path == "/":
+        route = "home"
+    elif path.startswith("/cart"):
+        route = "cart"
+    elif path.startswith("/category"):
+        route = "category"
+    else:
+        route = "home"
+
     qty = _cart_qty(cart)
 
     ctx.update({
         "request": request,
-        "cart_count": qty,  # для старих шаблонів
-        "cart_qty": qty,    # для нових
+        "cart_count": qty,
+        "cart_qty": qty,
+        "route": route,   # для фонів у CSS
     })
     return templates.TemplateResponse(template, ctx)
 
@@ -285,8 +317,9 @@ async def view_cart(request: Request):
 
 
 @app.get("/cart/add", name="cart_add_get")
-async def cart_add_get_redirect():
-    return RedirectResponse("/", status_code=303)
+async def cart_add_get_redirect(request: Request):
+    referer = request.headers.get("referer", "/")
+    return RedirectResponse(url=referer, status_code=303)
 
 
 @app.post("/cart/add", name="cart_add")
@@ -305,6 +338,7 @@ async def add_to_cart(
 
     cid = get_or_create_cid(request)
     cart = get_cart(cid)
+    referer = request.headers.get("referer") or "/"
 
     try:
         pid = int(product_id)
@@ -321,20 +355,29 @@ async def add_to_cart(
         except Exception:
             p = None
         name = getattr(p, "name", f"#{pid}") if p else f"#{pid}"
+
+        # Успіх → повертаємося на ту ж сторінку з банером
+        url = _url_with_params(referer,
+                               added=1,
+                               pid=pid,
+                               name=quote_plus(name),
+                               qty=qty)
+        resp = RedirectResponse(url=url, status_code=303)
+
     except KeyError:
-        return RedirectResponse("/?error=product_not_found", status_code=303)
+        url = _url_with_params(referer, error="product_not_found")
+        resp = RedirectResponse(url=url, status_code=303)
+
     except ValueError as e:
-        return RedirectResponse(f"/?error={str(e)}", status_code=303)
+        key = "not_enough_stock" if "stock" in str(e).lower() else "bad_qty"
+        url = _url_with_params(referer, error=key)
+        resp = RedirectResponse(url=url, status_code=303)
+
     except Exception as e:
         print("ADD_TO_CART_FATAL:", repr(e))
-        return RedirectResponse("/?error=internal", status_code=303)
+        url = _url_with_params(referer, error="internal")
+        resp = RedirectResponse(url=url, status_code=303)
 
-    # кодуємо name для URL
-    name_q = quote_plus(name)
-    resp = RedirectResponse(
-        url=f"/cart?added=1&pid={pid}&name={name_q}&qty={qty}",
-        status_code=303,
-    )
     if not request.cookies.get("cid"):
         resp.set_cookie("cid", cid)
     return resp
@@ -359,8 +402,7 @@ async def remove_from_cart(request: Request):
         except Exception:
             p = None
         if p is not None and removed_qty > 0:
-            stock_attr = "stock_qty" if hasattr(p, "stock_qty") \
-                         else ("stock" if hasattr(p, "stock") else None)
+            stock_attr = "stock_qty" if hasattr(p, "stock_qty") else ("stock" if hasattr(p, "stock") else None)
             if stock_attr:
                 try:
                     cur = int(getattr(p, stock_attr, 0) or 0)

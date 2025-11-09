@@ -3,52 +3,93 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark light" />
   <title>{{ title if title is defined and title else 'Магазин' }}</title>
 
-  <!-- базовий префікс -->
   <base href="{{ base_url if base_url is defined and base_url else '/' }}">
 
-  <!-- стилі -->
-  <link rel="stylesheet" href="/static/styles.css?v=6" />
-</head>
-<body>
-  <header class="container" style="justify-content:space-between;">
-    <div style="display:flex;gap:28px;align-items:center">
-      <h1 style="margin-right:8px">
-        <a href="{{ base_url if base_url is defined and base_url else '/' }}">🏋️ Спортивні товари</a>
-      </h1>
-      <nav>
-        <a href="{{ base_url if base_url is defined and base_url else '/' }}">Каталог</a>
-        <a href="{{ (base_url if base_url is defined and base_url else '/') ~ 'cart' }}">
-          Кошик <span class="badge">{{ (cart_qty if cart_qty is defined else (cart_count if cart_count is defined else 0)) }}</span>
-        </a>
-      </nav>
-    </div>
+  <!-- No-flicker theme setup -->
+  <script>
+    (function () {
+      try {
+        const t = localStorage.getItem("theme");
+        if (t === "light") document.documentElement.setAttribute("data-theme", "light");
+        else if (t === "dark") document.documentElement.removeAttribute("data-theme");
+        else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) {
+          document.documentElement.setAttribute("data-theme", "light");
+        }
+      } catch (_) {}
+    })();
+  </script>
 
-    <!-- перемикач теми -->
-    <button id="themeToggle" class="btn btn-outline" style="padding:8px 12px;border-radius:10px;font-weight:600">
-      🌙 Темна
-    </button>
+  <link rel="stylesheet" href="/static/styles.css?v=11" />
+
+  <!-- Мінімальні стилі для toast -->
+  <style>
+    .toast {
+      position: fixed; right: 18px; top: 18px; z-index: 9999;
+      display: none; max-width: 520px;
+      padding: 12px 14px; border-radius: 12px;
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+      color: var(--text); box-shadow: var(--shadow);
+    }
+    .toast.show { display: block; animation: toastIn .18s ease both; }
+    .toast.hide { animation: toastOut .18s ease both; }
+    .toast strong { font-weight: 800 }
+    .toast .actions { margin-top: 8px; display: flex; gap: 10px; }
+    .toast .btn-slim {
+      display:inline-flex; align-items:center; gap:6px;
+      padding:6px 10px; border-radius:10px; border:1px solid var(--border);
+      text-decoration:none; color:var(--text);
+      background: color-mix(in oklab, var(--panel) 80%, transparent);
+    }
+    @keyframes toastIn { from { opacity:0; transform: translateY(-6px) } to { opacity:1; transform: translateY(0) } }
+    @keyframes toastOut { to { opacity:0; transform: translateY(-6px) } }
+  </style>
+</head>
+
+<body data-theme="{{ theme|default('dark') }}" data-route="{{ route|default('home') }}">
+
+  <!-- ======= HEADER ======= -->
+  <header class="container site-header">
+    <a class="brand" href="{{ base_url if base_url is defined and base_url else '/' }}">
+      <span class="brand-mark">🏋️</span>
+      <span class="brand-text">
+        <span class="brand-line brand-gradient">Спортивні</span>
+        <span class="brand-line">товари</span>
+      </span>
+    </a>
+
+    <nav class="top-nav">
+      <a class="nav-pill" href="{{ base_url if base_url is defined and base_url else '/' }}">Каталог</a>
+      <a class="nav-pill" href="{{ (base_url if base_url is defined and base_url else '/') ~ 'cart' }}">
+        Кошик
+        <span class="badge">{{ (cart_qty if cart_qty is defined else (cart_count if cart_count is defined else 0)) }}</span>
+      </a>
+      <button id="themeToggle" class="btn-ghost" type="button">🌙 Темна</button>
+    </nav>
   </header>
 
-  <main class="container">
+  <!-- ======= MAIN ======= -->
+  <main class="container page-fade">
     {% block content %}{% endblock %}
   </main>
 
+  <footer class="container">
+    © 2025 Sport Store MVP
+  </footer>
+
+  <!-- Toast контейнер -->
+  <div id="toast" class="toast" role="alert" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- ======= THEME TOGGLER ======= -->
   <script>
     (function () {
       const root = document.documentElement;
       const KEY = "theme";
-      const saved = localStorage.getItem(KEY);
-
-      // якщо збережена тема є — ставимо її; інакше читаємо системну
-      if (saved === "light" || saved === "dark") {
-        root.setAttribute("data-theme", saved === "light" ? "light" : "");
-      } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) {
-        root.setAttribute("data-theme", "light");
-      }
-
       const btn = document.getElementById("themeToggle");
+
       function updateBtn() {
         const isLight = root.getAttribute("data-theme") === "light";
         btn.textContent = isLight ? "🌞 Світла" : "🌙 Темна";
@@ -59,9 +100,105 @@
         const isLight = root.getAttribute("data-theme") === "light";
         const next = isLight ? "dark" : "light";
         if (next === "light") root.setAttribute("data-theme", "light");
-        else root.removeAttribute("data-theme"); // темна — значення за замовчуванням
+        else root.removeAttribute("data-theme");
         localStorage.setItem(KEY, next);
         updateBtn();
+      });
+    })();
+  </script>
+
+  <!-- ======= TOAST: зчитування ?added / ?error з URL ======= -->
+  <script>
+    (function () {
+      const toast = document.getElementById("toast");
+      const url = new URL(window.location.href);
+      const q = url.searchParams;
+
+      const added = q.get("added");
+      const pid = q.get("pid");
+      const name = q.get("name");
+      const qty = q.get("qty");
+      const error = q.get("error");
+
+      function showToast(html, ms = 3500) {
+        toast.innerHTML = html;
+        toast.classList.remove("hide");
+        toast.classList.add("show");
+        const t = setTimeout(() => {
+          toast.classList.add("hide");
+          toast.addEventListener("animationend", () => {
+            toast.classList.remove("show", "hide");
+            toast.style.display = "none";
+          }, { once: true });
+        }, ms);
+        toast.style.display = "block";
+        // на клік — миттєво сховати
+        toast.onclick = () => { clearTimeout(t); toast.classList.add("hide"); };
+      }
+
+      if (added) {
+        const niceName = name ? decodeURIComponent(name) : ("ID " + (pid || ""));
+        const qtyNum = qty ? parseInt(qty, 10) : 1;
+        const cartUrl = "{{ (base_url if base_url is defined and base_url else '/') ~ 'cart' }}";
+        showToast(`
+          <div><strong>✅ Додано в кошик:</strong> ${niceName} <small>(x${qtyNum})</small></div>
+          <div class="actions">
+            <a class="btn-slim" href="${cartUrl}">Перейти до кошика →</a>
+          </div>
+        `);
+      } else if (error) {
+        const map = {
+          "product_not_found": "Товар не знайдено.",
+          "not_enough_stock": "Недостатньо товару на складі.",
+          "bad_qty": "Некоректна кількість.",
+          "internal": "Внутрішня помилка. Спробуйте ще раз."
+        };
+        const msg = map[error] || "Сталася помилка. Спробуйте ще раз.";
+        showToast(`<strong>⚠️ Помилка:</strong> ${msg}`, 4500);
+      }
+
+      // очистити query, щоб тости не повторювались при F5
+      if (added || error) {
+        url.searchParams.delete("added");
+        url.searchParams.delete("pid");
+        url.searchParams.delete("name");
+        url.searchParams.delete("qty");
+        url.searchParams.delete("error");
+        window.history.replaceState({}, "", url);
+      }
+    })();
+  </script>
+
+  <!-- ======= SMOOTH PAGE TRANSITION ======= -->
+  <script>
+    (function () {
+      const DURATION = 200;
+      const main = document.querySelector('main.page-fade');
+
+      requestAnimationFrame(() => {
+        main.classList.add('is-entering');
+        requestAnimationFrame(() => main.classList.add('is-entering-active'));
+      });
+
+      document.addEventListener('click', (e) => {
+        const a = e.target.closest('a');
+        if (!a) return;
+        const href = a.getAttribute('href') || '';
+        if (!href || href.startsWith('#') || a.target === '_blank' ||
+            e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        const url = new URL(href, window.location.href);
+        if (url.origin !== window.location.origin) return;
+        e.preventDefault();
+        main.classList.add('is-leaving');
+        setTimeout(() => (window.location.href = url.href), DURATION);
+      });
+
+      window.addEventListener('pageshow', (evt) => {
+        if (evt.persisted) {
+          main.classList.remove('is-leaving');
+          main.classList.add('is-entering');
+          requestAnimationFrame(() => main.classList.add('is-entering-active'));
+        }
       });
     })();
   </script>

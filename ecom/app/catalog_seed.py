@@ -9,6 +9,7 @@ def seed_catalog() -> GoodsCategories:
     cats.add_category("MMA")
     cats.add_category("Swimming")
     cats.add_category("Hiking")
+    cats.add_category("Cycling")
 
 
     # --- MMA ---
@@ -46,6 +47,20 @@ def seed_catalog() -> GoodsCategories:
     cats.add_product("Hiking", Product(308, "SKU-028", "Кросівки трекінгові Salewa", 3450.00, 9))
     cats.add_product("Hiking", Product(309, "SKU-029", "Намет 2-місний Coleman", 5200.00, 5))
     cats.add_product("Hiking", Product(310, "SKU-030", "Павербанк 20 000 mAh з сонячною панеллю", 1150.00, 14))
+
+    # --- CYCLING (Велоспорт) ---
+    cats.add_product("Cycling", Product(401, "SKU-041", "Велосипедний шолом MTB", 1250.00, 18))
+    cats.add_product("Cycling", Product(402, "SKU-042", "Рукавички велосипедні", 390.00, 40))
+    cats.add_product("Cycling", Product(403, "SKU-043", "Фара передня 800 лм (USB)", 720.00, 26))
+    cats.add_product("Cycling", Product(404, "SKU-044", "Ліхтар задній строб (USB)", 390.00, 34))
+    cats.add_product("Cycling", Product(405, "SKU-045", "Насос підлоговий з манометром", 980.00, 15))
+    cats.add_product("Cycling", Product(406, "SKU-046", "Сідло гелеве Comfort", 860.00, 20))
+    cats.add_product("Cycling", Product(407, "SKU-047", "Ланцюг 11-швидк. KMC", 890.00, 28))
+    cats.add_product("Cycling", Product(408, "SKU-048", "Камера 29\" x 2.10 (AV)", 210.00, 60))
+    cats.add_product("Cycling", Product(409, "SKU-049", "Пляшка для води 750 мл", 190.00, 55))
+    cats.add_product("Cycling", Product(410, "SKU-050", "Фляготримач алюмінієвий", 220.00, 45))
+    cats.add_product("Cycling", Product(411, "SKU-051", "Велокомп'ютер бездротовий", 1350.00, 12))
+    cats.add_product("Cycling", Product(412, "SKU-052", "Педалі контактні SPD", 1750.00, 14))
 
     return cats
 
@@ -113,7 +128,6 @@ class ShoppingCart:
             total += price * qty
         return float(total)
 
-# example usage using the seeded catalog
 cart = ShoppingCart(catalog)
 cart.add_item(101, 2)   # add 2 x product 101
 cart.add_item(301, 1)   # add 1 x product 301

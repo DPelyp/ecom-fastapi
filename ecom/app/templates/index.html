@@ -1,38 +1,40 @@
 {% extends "base.html" %}
 {% block content %}
-  <h2>Категорії</h2>
 
-  <div class="grid">
-    {% for name in categories %}
-      <div class="card category-card">
-        <h3>
-          <a href="{{ (base_url if base_url is defined and base_url else '/') ~ 'category/' ~ name }}">
-            {{ name }}
-          </a>
-        </h3>
+<h2>Категорії</h2>
 
-        {% set items = preview[name] if preview is defined and name in preview else [] %}
-        {% if items and items|length > 0 %}
-          <ul class="category-preview">
-            {% for p in items %}
-              {% set pname = (p['name'] if p is mapping else p.name) %}
-              {% set pprice_raw = (p['price'] if p is mapping else p.price) %}
-              {% set pprice = ('%.2f'|format(pprice_raw)) %}
-              <li>
-                <a href="{{ (base_url if base_url is defined and base_url else '/') ~ 'category/' ~ name }}">
-                  {{ pname }} — {{ pprice }} грн
-                </a>
-              </li>
-            {% endfor %}
-          </ul>
+<div class="cat-grid">
+  {% for cat in categories %}
+    {% set items = preview.get(cat, []) %}
+    <article class="category-card card">
+      <header class="category-header">
+        <div class="category-badge">
+          <span class="category-icon">
+            {% if cat|lower in ['mma','бій','fight'] %}🥊{% elif cat|lower in ['swimming','плавання'] %}🏊{% elif cat|lower in ['hiking','трекінг','похід'] %}🥾{% else %}🏷️{% endif %}
+          </span>
+          <a href="/category/{{ cat }}" class="category-title">{{ cat }}</a>
+        </div>
+        <a class="link-soft" href="/category/{{ cat }}">Переглянути всі →</a>
+      </header>
+
+      <ul class="category-items">
+        {% for p in items %}
+          <li class="category-item">
+            <a class="item-link" href="/category/{{ cat }}">
+              <span class="item-name">{{ p.name }}</span>
+              <span class="item-price">{{ "%.2f"|format(p.price|float) }} грн</span>
+            </a>
+          </li>
         {% else %}
-          <p class="muted">Поки що без товарів.</p>
-        {% endif %}
+          <li class="category-empty muted">У цій категорії поки що порожньо.</li>
+        {% endfor %}
+      </ul>
 
-        <a class="footer-link" href="{{ (base_url if base_url is defined and base_url else '/') ~ 'category/' ~ name }}">
-          Переглянути всі →
-        </a>
-      </div>
-    {% endfor %}
-  </div>
+      <footer class="category-footer">
+        <a href="/category/{{ cat }}" class="btn btn-outline btn-sm">Вся категорія</a>
+      </footer>
+    </article>
+  {% endfor %}
+</div>
+
 {% endblock %}
