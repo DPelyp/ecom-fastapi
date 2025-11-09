@@ -14,15 +14,36 @@ def seed_catalog() -> GoodsCategories:
 
     # --- MMA ---
     cats.add_product("MMA", Product(101, "SKU-001", "Рукавички MMA", 900.00, 10))
+    cats._by_id[101].image_url = "/static/mma/gloves.avif"
+    cats._by_id[101].description = "Легкі рукавички MMA з щільною амортизацією та м’якою підкладкою. Вентиляційні отвори й надійна липучка для фіксації — ідеально для тренувань і спарингів."
+
     cats.add_product("MMA", Product(102, "SKU-002", "Капа", 180.00, 50))
+    cats._by_id[102].image_url = "/static/mma/kapa.jpg"
+    cats._by_id[102].description = "Двошарова термопластична капа, що формується у гарячій воді під вашу щелепу. Дає вільно дихати та постачається з футляром."
+
     cats.add_product("MMA", Product(103, "SKU-003", "Шолом боксерський Everlast", 1250.00, 7))
+    cats._by_id[103].image_url = "/static/mma/helmet.webp"
+    cats._by_id[103].description = "Шолом Everlast із багатошаровою піною та розширеним кутом огляду. Синтетична шкіра, посилені шви й зручні липучки для швидкої посадки."
+
     cats.add_product("MMA", Product(104, "SKU-004", "Бинти еластичні RDX 4.5м", 250.00, 40))
+    cats._by_id[104].image_url = "/static/mma/binty.jpg"
+    cats._by_id[104].description = "Еластичні бинти RDX 4.5 м з петелькою на великий палець та надійною липучкою. Дихаюча бавовна стабілізує зап’ястя й суглоби."
+
     cats.add_product("MMA", Product(105, "SKU-005", "Мішок боксерський 30 кг", 2300.00, 4))
+    cats._by_id[105].image_url = "/static/mma/grusha.webp"
+    cats._by_id[105].description = "Боксерський мішок 30 кг із міцної ПВХ-екошкіри, посилені шви та стальні ланцюги. Текстильне наповнення тримає форму — підходить для дому й залу."
+
     cats.add_product("MMA", Product(106, "SKU-006", "Лапи тренувальні для спарингів", 720.00, 12))
+    cats._by_id[106].image_url = "/static/mma/lapy.jpg"
+    cats._by_id[106].description = "Пара тренувальних лап із вигином під долоню та щільною амортизацією. Перфорація відводить тепло, кріплення фіксує руку під час серій."
+
     cats.add_product("MMA", Product(107, "SKU-007", "Кимоно для бойових мистецтв", 1800.00, 6))
+    cats._by_id[107].image_url = "/static/mma/kimono.webp"
+    cats._by_id[107].description = "Кімоно для BJJ/джіу-джитсу зі щільної плетінки (≈350–450 gsm) та підсиленими швами. Зручний крій для партеру; пояс у комплект не входить."
+
     cats.add_product("MMA", Product(108, "SKU-008", "Щит для ударів (тайський пад)", 950.00, 9))
-    cats.add_product("MMA", Product(109, "SKU-009", "Скакалка шкіряна", 280.00, 25))
-    cats.add_product("MMA", Product(110, "SKU-010", "Захист паху чоловічий", 450.00, 18))
+    cats._by_id[108].image_url = "/static/mma/shield.jpg"
+    cats._by_id[108].description = "Тайський пад/щит із щільною піною та анатомічною кривизною для прийому ударів. Подвійні ручки і ремені забезпечують надійну фіксацію."   
 
     # --- SWIMMING ---
     cats.add_product("Swimming", Product(201, "SKU-011", "Окуляри для плавання Arena", 350.00, 25))
