@@ -16,7 +16,7 @@ templates = Jinja2Templates(directory="app/templates")
 # ---------- утиліта для безпечного додавання query-параметрів ----------
 def _url_with_params(base_url: str, **params) -> str:
     """
-    Акуратно додає/оновлює query-параметри у будь-який URL (враховуючи referer з абсолютом/відносним шляхом).
+    Lодає/оновлює query-параметри у будь-який URL (враховуючи referer з абсолютом/відносним шляхом).
     Якщо щось піде не так — повертає корінь з потрібними параметрами.
     """
     try:
@@ -355,8 +355,6 @@ async def add_to_cart(
         except Exception:
             p = None
         name = getattr(p, "name", f"#{pid}") if p else f"#{pid}"
-
-        # Успіх → повертаємося на ту ж сторінку з банером
         url = _url_with_params(referer,
                                added=1,
                                pid=pid,
@@ -393,8 +391,7 @@ async def remove_from_cart(request: Request):
     cart = get_cart(cid)
 
     try:
-        removed_qty = _cart_remove(cart, pid)  # шім: видаляє незалежно від API
-
+        removed_qty = _cart_remove(cart, pid)
         # повернемо на склад, якщо знайдемо товар і є поле stock/stock_qty
         p = None
         try:

@@ -9,7 +9,7 @@ class GoodsCategories:
     def __init__(self):
         # назва категорії -> список Product
         self.categories: Dict[str, List[Product]] = {}
-        # простий індекс всіх товарів за id (знадобиться для пошуку)
+        # простий індекс всіх товарів за id
         self._by_id: Dict[int, Product] = {}
 
     def add_category(self, name: str):
@@ -34,14 +34,12 @@ class GoodsCategories:
         return self._by_id.get(pid)
     
     def __repr__(self):
-        # коротка форма для дебагу
         return f"<GoodsCategories categories={list(self.categories.keys())}>"
 
     def __str__(self):
-        # більш детальний, людиночитний формат
+        # більш детальний, читабельний формат
         lines = []
         for cat, products in self.categories.items():
-            # lines.append(f"\nКатегорія: {cat}")
             for p in products:
                 lines.append(f"Назва : {p.name} Ціна : {p.price} грн, Кількість : {p.stock_qty} шт.")
         return "\n".join(lines)
