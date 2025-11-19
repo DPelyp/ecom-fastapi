@@ -35,6 +35,38 @@ h1{ margin:0; font-weight:900; font-size:clamp(28px,4vw,40px) }
 h2{ margin:24px 0 16px; font-size:clamp(22px,2.4vw,30px) }
 h3{ margin:0 0 6px; font-size:19px }
 
+.page-title{
+  margin-top:4px;
+  margin-bottom:18px;
+  font-weight:900;
+  font-size:clamp(26px,3vw,34px);
+}
+
+/* a11y helper */
+.visually-hidden{
+  position:absolute!important;
+  width:1px; height:1px;
+  padding:0; margin:-1px;
+  overflow:hidden; clip:rect(0,0,0,0);
+  white-space:nowrap; border:0;
+}
+
+/* ==================== PAGE FADE (JS у base.html) ==================== */
+.page-fade{
+  opacity:0;
+  transform:translateY(4px);
+  transition:opacity .2s ease, transform .2s ease;
+}
+.page-fade.is-entering,
+.page-fade.is-entering.page-fade.is-entering-active{
+  opacity:1;
+  transform:translateY(0);
+}
+.page-fade.is-leaving{
+  opacity:0;
+  transform:translateY(6px);
+}
+
 /* ==================== ROUTE BACKGROUNDS ==================== */
 body[data-route="home"]::before,
 body[data-route="category"]::before,
@@ -42,6 +74,8 @@ body[data-route="cart"]::before{
   content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
   background-repeat:no-repeat; background-size:cover;
 }
+
+/* HOME */
 body[data-route="home"]::before{
   background:
     radial-gradient(80vmax 60vmax at 15% 25%, rgba(0,214,143,.18), transparent 65%),
@@ -54,6 +88,8 @@ html[data-theme="light"] body[data-route="home"]::before{
     radial-gradient(75vmax 55vmax at 82% 78%, rgba(140,90,255,.22), transparent 60%),
     linear-gradient(135deg, #fff 0%, #f1f5ff 40%, #e6edff 100%);
 }
+
+/* CATEGORY – базовий фон */
 body[data-route="category"]::before{
   background:
     radial-gradient(75vmax 60vmax at 12% 20%, rgba(255,90,0,.22), transparent 70%),
@@ -66,6 +102,50 @@ html[data-theme="light"] body[data-route="category"]::before{
     radial-gradient(70vmax 55vmax at 82% 82%, rgba(255,0,120,.18), transparent 65%),
     linear-gradient(135deg, #fff7f2 0%, #ffe9f5 50%, #fff5e6 100%);
 }
+
+/* CATEGORY – фон з тематичними картинками */
+body[data-route="category"][data-cat="MMA"]::before{
+  background-image:
+    radial-gradient(75vmax 60vmax at 15% 20%, rgba(255,80,80,.35), transparent 65%),
+    radial-gradient(80vmax 60vmax at 85% 80%, rgba(124,92,255,.28), transparent 70%),
+    linear-gradient(145deg, #160b16 0%, #1c1022 40%, #0b0f18 100%),
+    url("/static/bg/mma-bg.jpg");
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+}
+body[data-route="category"][data-cat="Swimming"]::before{
+  background-image:
+    radial-gradient(80vmax 60vmax at 20% 15%, rgba(0,180,255,.32), transparent 65%),
+    radial-gradient(80vmax 60vmax at 80% 85%, rgba(0,214,143,.22), transparent 65%),
+    linear-gradient(145deg, #02121f 0%, #04182b 40%, #06101e 100%),
+    url("/static/bg/swimming-bg.jpg");
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+}
+body[data-route="category"][data-cat="Hiking"]::before{
+  background-image:
+    radial-gradient(80vmax 60vmax at 18% 20%, rgba(34,197,94,.28), transparent 65%),
+    radial-gradient(80vmax 60vmax at 82% 80%, rgba(59,130,246,.22), transparent 65%),
+    linear-gradient(145deg, #04120c 0%, #071814 40%, #020b08 100%),
+    url("/static/bg/hiking-bg.jpg");
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+}
+body[data-route="category"][data-cat="Cycling"]::before{
+  background-image:
+    radial-gradient(80vmax 60vmax at 18% 18%, rgba(234,179,8,.3), transparent 65%),
+    radial-gradient(80vmax 60vmax at 82% 82%, rgba(59,130,246,.24), transparent 65%),
+    linear-gradient(145deg, #050814 0%, #090f20 40%, #02040b 100%),
+    url("/static/bg/cycling-bg.jpg");
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+}
+
+/* CART */
 body[data-route="cart"]::before{
   background:
     radial-gradient(70vmax 60vmax at 18% 20%, rgba(255,193,7,.18), transparent 70%),
@@ -176,29 +256,57 @@ input[type="number"]:focus, input[type="text"]:focus{
 }
 
 /* Footer */
-footer{ opacity:.75; color:var(--muted); padding:24px 0 36px; text-align:center; border-top:1px solid var(--border); margin-top:32px }
+footer{
+  opacity:.75; color:var(--muted); padding:24px 0 36px; text-align:center;
+  border-top:1px solid var(--border); margin-top:32px
+}
 
 /* ==================== CATEGORY PREVIEW (index) ==================== */
 .cat-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(420px,1fr)); gap:20px }
 .category-card{ padding:18px 18px 12px }
 .category-header{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px }
 .category-badge{ display:flex; align-items:center; gap:10px }
-.category-icon{ width:36px; height:36px; border-radius:10px; display:grid; place-items:center; font-size:18px; background:color-mix(in oklab, var(--accent) 18%, transparent); box-shadow:inset 0 1px 0 rgba(255,255,255,.06) }
+.category-icon{
+  width:36px; height:36px; border-radius:10px; display:grid; place-items:center; font-size:18px;
+  background:color-mix(in oklab, var(--accent) 18%, transparent); box-shadow:inset 0 1px 0 rgba(255,255,255,.06)
+}
 .category-title{ color:var(--text); font-size:20px; font-weight:900 }
-.link-soft{ color:var(--muted); font-size:14px; padding:6px 8px; border-radius:8px; text-decoration:none; transition:color .2s ease, background .2s ease }
+.link-soft{
+  color:var(--muted); font-size:14px; padding:6px 8px; border-radius:8px; text-decoration:none;
+  transition:color .2s ease, background .2s ease
+}
 .link-soft:hover{ background:rgba(124,92,255,.14); color:var(--text) }
 .category-items{ list-style:none; margin:6px 0 8px; padding:0; display:flex; flex-direction:column; gap:6px }
-.category-item{ border:1px solid var(--border); background:linear-gradient(180deg, color-mix(in oklab, var(--panel) 90%, transparent) 0%, var(--panel-2) 100%); border-radius:12px; overflow:hidden; transition:transform .12s ease, border-color .2s ease, box-shadow .2s ease }
+.category-item{
+  border:1px solid var(--border);
+  background:linear-gradient(180deg, color-mix(in oklab, var(--panel) 90%, transparent) 0%, var(--panel-2) 100%);
+  border-radius:12px; overflow:hidden; transition:transform .12s ease, border-color .2s ease, box-shadow .2s ease
+}
 .category-item:hover{ transform:translateY(-2px); border-color:color-mix(in oklab, var(--accent) 32%, var(--border)); box-shadow:0 10px 22px rgba(0,0,0,.28) }
 .item-link{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px; color:var(--text); text-decoration:none }
 .item-name{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
-.item-price{ font-weight:900; font-size:14px; padding:6px 10px; border-radius:999px; border:1px solid var(--border); background:color-mix(in oklab, var(--accent) 12%, transparent) }
-html[data-theme="light"] .category-item{ background:linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%); box-shadow:0 8px 18px rgba(40,60,140,.10) }
-html[data-theme="light"] .item-price{ background:color-mix(in oklab, var(--accent) 18%, #fff 82%); border-color:#dfe5fb }
-html[data-theme="light"] .category-icon{ background:color-mix(in oklab, var(--accent) 26%, #fff 74%) }
+.item-price{
+  font-weight:900; font-size:14px; padding:6px 10px; border-radius:999px;
+  border:1px solid var(--border); background:color-mix(in oklab, var(--accent) 12%, transparent)
+}
+html[data-theme="light"] .category-item{
+  background:linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+  box-shadow:0 8px 18px rgba(40,60,140,.10)
+}
+html[data-theme="light"] .item-price{
+  background:color-mix(in oklab, var(--accent) 18%, #fff 82%);
+  border-color:#dfe5fb
+}
+html[data-theme="light"] .category-icon{
+  background:color-mix(in oklab, var(--accent) 26%, #fff 74%)
+}
 
 /* ==================== PRODUCT LIST (category page) ==================== */
-.product-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap:1.2rem }
+.product-grid{
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap:1.2rem;
+}
 
 .product-card{
   background: var(--surface); border:1px solid var(--border); border-radius:16px; padding:1rem;
@@ -206,7 +314,11 @@ html[data-theme="light"] .category-icon{ background:color-mix(in oklab, var(--ac
   display:flex; flex-direction:column; gap:.6rem;
   transition: transform .15s ease, box-shadow .2s ease, border-color .2s ease;
 }
-.product-card:hover{ transform:translateY(-3px); box-shadow:0 8px 22px rgba(0,0,0,.18); border-color: color-mix(in oklab, var(--accent) 28%, var(--border)) }
+.product-card:hover{
+  transform:translateY(-3px);
+  box-shadow:0 8px 22px rgba(0,0,0,.18);
+  border-color: color-mix(in oklab, var(--accent) 28%, var(--border));
+}
 
 /* Media */
 .product-media{
@@ -217,6 +329,9 @@ html[data-theme="light"] .category-icon{ background:color-mix(in oklab, var(--ac
 .product-img{
   display:block; width:100%; height:100%;
   object-fit:contain; object-position:center; background-color:transparent;
+}
+.product-img.img-fallback{
+  object-fit:cover;
 }
 @supports not (aspect-ratio: 1/1){
   .product-media{ position: relative; height: 0; padding-top: 62.5% }
@@ -236,27 +351,63 @@ html[data-theme="light"] .category-icon{ background:color-mix(in oklab, var(--ac
   display:flex; flex-direction:column; gap:.35rem;
 }
 
-/* Назва / SKU / Ціна — однакова висота блоку зверху */
+/* Назва / SKU / ціна — верхній блок */
 .product-name{
   font-weight:800; letter-spacing:.2px; line-height:1.25;
   display:-webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp:2;
   overflow:hidden; min-height: calc(1.25em * 2);
 }
-.sku{ font-size:.9rem; color: var(--text-muted); min-height:1.2em }
-.price{ font-weight:800; color: var(--accent); min-height:1.2em }
+.sku{
+  font-size:.9rem; color: var(--text-muted); min-height:1.2em;
+}
+
+/* Блок ціни зі знижкою */
+.price{
+  display:flex;
+  align-items:baseline;
+  flex-wrap:wrap;
+  gap:.4rem;
+}
+.old-price{
+  text-decoration:line-through;
+  color:var(--text-muted);
+  font-weight:600;
+}
+.new-price{
+  font-weight:900;
+  color:var(--accent);
+}
+.discount-tag{
+  font-size:.8rem;
+  font-weight:800;
+  padding:2px 8px;
+  border-radius:999px;
+  background:color-mix(in oklab, var(--accent) 40%, transparent);
+  color:#fff;
+}
+.price:not(:has(.new-price)){
+  font-weight:800;
+  color:var(--accent);
+}
 
 /* Опис — показуємо ПОВНІСТЮ */
 .desc{
   color: var(--text-muted);
   font-size:.95rem;
   line-height:1.5;
-  display:block; overflow:visible;
+  display:block;
+  overflow:visible;
 }
 
-/* Низ картки: “в наявності” над формою, все на одній висоті */
+/* Низ картки: “в наявності” + форма */
 .product-footer{
   margin-top:auto;
   display:grid; grid-template-rows:auto auto; row-gap:.6rem;
+}
+.stock{ font-size:.9rem }
+.stock.out-of-stock{
+  color: var(--danger);
+  font-weight:700;
 }
 .product-footer .add-form{
   display:flex; align-items:center; gap:.6rem; justify-content:flex-end;
@@ -273,7 +424,10 @@ html[data-theme="light"] .category-icon{ background:color-mix(in oklab, var(--ac
 }
 
 /* ==================== TOASTS ==================== */
-.toast-host{ position: fixed; top:18px; right:18px; display:flex; flex-direction:column; gap:10px; z-index:2000 }
+.toast-host{
+  position: fixed; top:18px; right:18px;
+  display:flex; flex-direction:column; gap:10px; z-index:2000;
+}
 .toast{
   opacity:0; transform:translateY(-6px); padding:10px 14px; border-radius:12px;
   border:1px solid var(--border); background: color-mix(in oklab, var(--panel) 85%, transparent);
@@ -283,3 +437,32 @@ html[data-theme="light"] .category-icon{ background:color-mix(in oklab, var(--ac
 .toast.show{ opacity:1; transform:translateY(0) }
 .toast.success{ border-color: color-mix(in oklab, var(--accent-2) 40%, var(--border)) }
 .toast.error  { border-color: color-mix(in oklab, var(--danger)   40%, var(--border)) }
+/* ===== PRICE BLOCK (OLD / NEW / DISCOUNT) ===== */
+.price {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-weight: 800;
+}
+
+.price-old {
+  text-decoration: line-through;
+  color: var(--text-muted);
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+.price-new {
+  color: var(--accent);
+  font-weight: 900;
+}
+
+.discount-badge {
+  background: color-mix(in oklab, var(--danger) 55%, transparent);
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 800;
+}

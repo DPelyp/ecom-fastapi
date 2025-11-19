@@ -13,9 +13,11 @@
     (function () {
       try {
         const t = localStorage.getItem("theme");
-        if (t === "light") document.documentElement.setAttribute("data-theme", "light");
-        else if (t === "dark") document.documentElement.removeAttribute("data-theme");
-        else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) {
+        if (t === "light") {
+          document.documentElement.setAttribute("data-theme", "light");
+        } else if (t === "dark") {
+          document.documentElement.removeAttribute("data-theme");
+        } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) {
           document.documentElement.setAttribute("data-theme", "light");
         }
       } catch (_) {}
@@ -27,29 +29,55 @@
   <!-- Мінімальні стилі для toast -->
   <style>
     .toast {
-      position: fixed; right: 18px; top: 18px; z-index: 9999;
-      display: none; max-width: 520px;
-      padding: 12px 14px; border-radius: 12px;
+      position: fixed;
+      right: 18px;
+      top: 18px;
+      z-index: 9999;
+      display: none;
+      max-width: 520px;
+      padding: 12px 14px;
+      border-radius: 12px;
       border: 1px solid var(--border);
       background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
-      color: var(--text); box-shadow: var(--shadow);
+      color: var(--text);
+      box-shadow: var(--shadow);
     }
     .toast.show { display: block; animation: toastIn .18s ease both; }
     .toast.hide { animation: toastOut .18s ease both; }
     .toast strong { font-weight: 800 }
-    .toast .actions { margin-top: 8px; display: flex; gap: 10px; }
+    .toast .actions {
+      margin-top: 8px;
+      display: flex;
+      gap: 10px;
+    }
     .toast .btn-slim {
-      display:inline-flex; align-items:center; gap:6px;
-      padding:6px 10px; border-radius:10px; border:1px solid var(--border);
-      text-decoration:none; color:var(--text);
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 10px;
+      border-radius:10px;
+      border:1px solid var(--border);
+      text-decoration:none;
+      color:var(--text);
       background: color-mix(in oklab, var(--panel) 80%, transparent);
     }
-    @keyframes toastIn { from { opacity:0; transform: translateY(-6px) } to { opacity:1; transform: translateY(0) } }
-    @keyframes toastOut { to { opacity:0; transform: translateY(-6px) } }
+    @keyframes toastIn {
+      from { opacity:0; transform: translateY(-6px) }
+      to   { opacity:1; transform: translateY(0) }
+    }
+    @keyframes toastOut {
+      to { opacity:0; transform: translateY(-6px) }
+    }
   </style>
 </head>
 
-<body data-theme="{{ theme|default('dark') }}" data-route="{{ route|default('home') }}">
+<body
+  data-theme="{{ theme|default('dark') }}"
+  data-route="{{ route|default('home') }}"
+  {% if category is defined %}
+    data-cat="{{ category|lower }}"
+  {% endif %}
+>
 
   <!-- ======= HEADER ======= -->
   <header class="container site-header">
@@ -65,7 +93,9 @@
       <a class="nav-pill" href="{{ base_url if base_url is defined and base_url else '/' }}">Каталог</a>
       <a class="nav-pill" href="{{ (base_url if base_url is defined and base_url else '/') ~ 'cart' }}">
         Кошик
-        <span class="badge">{{ (cart_qty if cart_qty is defined else (cart_count if cart_count is defined else 0)) }}</span>
+        <span class="badge">
+          {{ (cart_qty if cart_qty is defined else (cart_count if cart_count is defined else 0)) }}
+        </span>
       </a>
       <button id="themeToggle" class="btn-ghost" type="button">🌙 Темна</button>
     </nav>
@@ -115,9 +145,9 @@
       const q = url.searchParams;
 
       const added = q.get("added");
-      const pid = q.get("pid");
-      const name = q.get("name");
-      const qty = q.get("qty");
+      const pid   = q.get("pid");
+      const name  = q.get("name");
+      const qty   = q.get("qty");
       const error = q.get("error");
 
       function showToast(html, ms = 3500) {
@@ -132,13 +162,12 @@
           }, { once: true });
         }, ms);
         toast.style.display = "block";
-        // на клік — миттєво сховати
         toast.onclick = () => { clearTimeout(t); toast.classList.add("hide"); };
       }
 
       if (added) {
-        const niceName = name 
-          ? decodeURIComponent(name).replace(/\+/g, " ") 
+        const niceName = name
+          ? decodeURIComponent(name).replace(/\+/g, " ")
           : ("ID " + (pid || ""));
 
         const qtyNum = qty ? parseInt(qty, 10) : 1;
@@ -160,7 +189,6 @@
         showToast(`<strong>⚠️ Помилка:</strong> ${msg}`, 4500);
       }
 
-      // очистити query, щоб тости не повторювались при F5
       if (added || error) {
         url.searchParams.delete("added");
         url.searchParams.delete("pid");

@@ -12,11 +12,10 @@ app = FastAPI(title="Ecom MVP")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
 
-
 # ---------- утиліта для безпечного додавання query-параметрів ----------
 def _url_with_params(base_url: str, **params) -> str:
     """
-    Lодає/оновлює query-параметри у будь-який URL (враховуючи referer з абсолютом/відносним шляхом).
+    Додає/оновлює query-параметри у будь-який URL (враховуючи referer з абсолютом/відносним шляхом).
     Якщо щось піде не так — повертає корінь з потрібними параметрами.
     """
     try:
@@ -32,7 +31,6 @@ def _url_with_params(base_url: str, **params) -> str:
     except Exception:
         qs = urlencode({k: v for k, v in params.items() if v is not None})
         return "/" + (f"?{qs}" if qs else "")
-
 
 # ---------- нормалізатори кошика ----------
 def _iter_cart_items(cart):
@@ -81,7 +79,6 @@ def _iter_cart_items(cart):
     # інші варіанти — нічого
     return
 
-
 def _cart_qty(cart) -> int:
     """Підрахунок кількості товарів у кошику незалежно від структури."""
     try:
@@ -97,7 +94,6 @@ def _cart_qty(cart) -> int:
     except Exception:
         return 0
     return total
-
 
 # ---------- шіми для додавання/видалення ----------
 def _cart_add(cart, product_id: int, qty: int):
@@ -172,7 +168,6 @@ def _cart_add(cart, product_id: int, qty: int):
     # якщо структура невідома — перезапис як dict
     setattr(cart, "items", {pid: q})
 
-
 def _cart_remove(cart, product_id: int):
     """
     Видаляє позицію з кошика, навіть якщо немає remove_item().
@@ -214,7 +209,6 @@ def _cart_remove(cart, product_id: int):
 
     return removed_qty
 
-
 # ---------- рендер-хелпер ----------
 def _render(request: Request, template: str, ctx: dict):
     cid = get_or_create_cid(request)
@@ -241,7 +235,6 @@ def _render(request: Request, template: str, ctx: dict):
     })
     return templates.TemplateResponse(template, ctx)
 
-
 # ---------- routes ----------
 @app.get("/", name="catalog", response_class=HTMLResponse)
 async def home(request: Request):
@@ -251,7 +244,6 @@ async def home(request: Request):
     if not request.cookies.get("cid"):
         resp.set_cookie("cid", get_or_create_cid(request))
     return resp
-
 
 @app.get("/category/{name}", name="category", response_class=HTMLResponse)
 async def category_page(name: str, request: Request):
@@ -315,12 +307,10 @@ async def view_cart(request: Request):
         resp.set_cookie("cid", cid)
     return resp
 
-
 @app.get("/cart/add", name="cart_add_get")
 async def cart_add_get_redirect(request: Request):
     referer = request.headers.get("referer", "/")
     return RedirectResponse(url=referer, status_code=303)
-
 
 @app.post("/cart/add", name="cart_add")
 async def add_to_cart(
@@ -379,7 +369,6 @@ async def add_to_cart(
     if not request.cookies.get("cid"):
         resp.set_cookie("cid", cid)
     return resp
-
 
 @app.post("/cart/remove", name="cart_remove")
 async def remove_from_cart(request: Request):

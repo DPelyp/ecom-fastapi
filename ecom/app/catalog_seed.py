@@ -1,6 +1,7 @@
 from .goodsCategories import GoodsCategories
 from .goodsProducts import Product
 from decimal import Decimal
+from .discountedProduct import DiscountedProduct
 
 
 def seed_catalog() -> GoodsCategories:
@@ -11,9 +12,10 @@ def seed_catalog() -> GoodsCategories:
     cats.add_category("Hiking")
     cats.add_category("Cycling")
 
-
     # --- MMA ---
-    cats.add_product("MMA", Product(101, "SKU-001", "Рукавички MMA", 900.00, 10))
+    cats.add_product("MMA", DiscountedProduct(
+    101, "SKU-001", "Рукавички MMA", 900.00, 10, discount=0.15))
+
     cats._by_id[101].image_url = "/static/mma/gloves.avif"
     cats._by_id[101].description = "Легкі рукавички MMA з щільною амортизацією та м’якою підкладкою. Вентиляційні отвори й надійна липучка для фіксації — ідеально для тренувань і спарингів."
 
@@ -215,6 +217,6 @@ cart.add_item(101, 2)   # add 2 x product 101
 cart.add_item(301, 1)   # add 1 x product 301
 print("Total:", cart.calculate_total())
 cart.remove_item(101, 1)  # remove 1 of product 101
-print("Total after removal:", cart.calculate_total())
-print("Cart items:", cart.items)
-print("Catalog stock snapshot:", as_dict(catalog))
+# print("Total after removal:", cart.calculate_total())
+# print("Cart items:", cart.items)
+# print("Catalog stock snapshot:", as_dict(catalog))
