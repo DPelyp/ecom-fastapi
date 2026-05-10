@@ -1,16 +1,46 @@
-# app/main.py
+## app/main.py
+from pathlib import Path
+
 from fastapi import FastAPI, Request, HTTPException, Form
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from urllib.parse import quote_plus, urlparse, parse_qs, urlencode, urlunparse
+from fastapi import Depends
+from sqlalchemy.orm import Session
+
+from .core.database import get_db
+
+from .core.database import engine, Base
+
+# імпорт моделей ОБОВʼЯЗКОВИЙ
+from .models import Category, Product
+
+# seed
+from .seed_db import seed_database
 
 # runtime-шари
 from .cart_runtime import get_or_create_cid, get_cart, CATALOG
 
 app = FastAPI(title="Ecom MVP")
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
-templates = Jinja2Templates(directory="app/templates")
+
+# створення таблиць
+Base.metadata.create_all(bind=engine)
+
+# заповнення БД стартовими даними
+seed_database()
+
+BASE_DIR = Path(__file__).resolve().parent
+
+app.mount(
+    "/static",
+    StaticFiles(directory=BASE_DIR / "static"),
+    name="static"
+)
+
+templates = Jinja2Templates(
+    directory=BASE_DIR / "templates"
+)
 
 # ---------- утиліта для безпечного додавання query-параметрів ----------
 def _url_with_params(base_url: str, **params) -> str:
@@ -237,12 +267,29 @@ def _render(request: Request, template: str, ctx: dict):
 
 # ---------- routes ----------
 @app.get("/", name="catalog", response_class=HTMLResponse)
-async def home(request: Request):
-    categories = CATALOG.list_categories()
-    preview = {name: CATALOG.get_products(name)[:3] for name in categories}
-    resp = _render(request, "index.html", {"categories": categories, "preview": preview})
+async def home(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    categories = db.query(Category).all()
+
+    preview = {}
+
+    for category in categories:
+        preview[category.name] = category.products[:3]
+
+    resp = _render(
+        request,
+        "index.html",
+        {
+            "categories": categories,
+            "preview": preview
+        }
+    )
+
     if not request.cookies.get("cid"):
         resp.set_cookie("cid", get_or_create_cid(request))
+
     return resp
 
 @app.get("/category/{name}", name="category", response_class=HTMLResponse)

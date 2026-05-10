@@ -1,6 +1,6 @@
 # app/goodsCategories.py
 import sys
-sys.stdout.reconfigure(encoding='utf-8')
+sys.stdout.reconfigure(encoding='utf-8') # pyright: ignore[reportAttributeAccessIssue]
 
 from typing import List, Dict
 from .goodsProducts import Product

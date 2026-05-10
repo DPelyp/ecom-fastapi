@@ -136,7 +136,7 @@ def seed_catalog() -> GoodsCategories:
 
     cats.add_product("Cycling", Product(406, "SKU-046", "Сідло гелеве Comfort", 860.00, 20))
     cats._by_id[406].image_url = "/static/cycling/sidlo.jpg"
-    cats._by_id[406].description = "Гелеве велосипедне сідло Comfort з ергономічним дизайном і додатковою амортизацією. Забезпечує комфорт під час тривалих поїздок і зменшує тиск на сідниці."
+    cats._by_id[406].description = "Гелеве велосипедне сідло Comfort з ергономічним дизайном і додатковою амортизацією. Забезпечує комфорт під час тривалих поїздок і зменшує тиск на сідниці." # type: ignore
 
     cats.add_product("Cycling", Product(407, "SKU-047", "Ланцюг 11-швидк. KMC", 890.00, 28))
     cats._by_id[407].image_url = "/static/cycling/lancyh.jpg"
