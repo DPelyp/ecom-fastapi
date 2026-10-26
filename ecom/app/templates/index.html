@@ -5,34 +5,60 @@
 
 <div class="cat-grid">
   {% for cat in categories %}
-    {% set items = preview.get(cat, []) %}
+    {% set items = preview.get(cat.name, []) %}
+
     <article class="category-card card">
       <header class="category-header">
+
         <div class="category-badge">
           <span class="category-icon">
-            {% if cat|lower in ['mma','бій','fight'] %}🥊{% elif cat|lower in ['swimming','плавання'] %}🏊{% elif cat|lower in ['hiking','трекінг','похід'] %}🥾{% else %}🏷️{% endif %}
+            {% if cat.name|lower in ['mma','бій','fight'] %}
+              🥊
+            {% elif cat.name|lower in ['swimming','плавання'] %}
+              🏊
+            {% elif cat.name|lower in ['hiking','трекінг','похід'] %}
+              🥾
+            {% else %}
+              🏷️
+            {% endif %}
           </span>
-          <a href="/category/{{ cat }}" class="category-title">{{ cat }}</a>
+
+          <a href="/category/{{ cat.name }}" class="category-title">
+            {{ cat.name }}
+          </a>
         </div>
-        <a class="link-soft" href="/category/{{ cat }}">Переглянути всі →</a>
+
+        <a class="link-soft" href="/category/{{ cat.name }}">
+          Переглянути всі →
+        </a>
+
       </header>
 
       <ul class="category-items">
         {% for p in items %}
           <li class="category-item">
-            <a class="item-link" href="/category/{{ cat }}">
+            <a class="item-link" href="/category/{{ cat.name }}">
               <span class="item-name">{{ p.name }}</span>
-              <span class="item-price">{{ "%.2f"|format(p.price|float) }} грн</span>
+
+              <span class="item-price">
+                {{ "%.2f"|format(p.price|float) }} грн
+              </span>
             </a>
           </li>
+
         {% else %}
-          <li class="category-empty muted">У цій категорії поки що порожньо.</li>
+          <li class="category-empty muted">
+            У цій категорії поки що порожньо.
+          </li>
         {% endfor %}
       </ul>
 
       <footer class="category-footer">
-        <a href="/category/{{ cat }}" class="btn btn-outline btn-sm">Вся категорія</a>
+        <a href="/category/{{ cat.name }}" class="btn btn-outline btn-sm">
+          Вся категорія
+        </a>
       </footer>
+
     </article>
   {% endfor %}
 </div>

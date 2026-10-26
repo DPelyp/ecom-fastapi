@@ -2,11 +2,16 @@
 
 {% block content %}
 
-  <h2 class="page-title">Категорія: {{ category|e }}</h2>
+  <h2 class="page-title">
+    Категорія: {{ category.name|e }}
+  </h2>
 
-  {# Атрибут для фонів категорії (MMA / Swimming / Hiking / Cycling) #}
+  {# Атрибут для фонів категорії #}
   <script>
-    document.body.setAttribute("data-cat", "{{ category }}");
+    document.body.setAttribute(
+      "data-cat",
+      "{{ category.name }}"
+    );
   </script>
 
   <div class="product-grid">
@@ -16,6 +21,7 @@
 
         {# ---------- MEDIA ---------- #}
         {% set img_url = p.image_url if p.image_url else '/static/img/placeholder.webp' %}
+
         <div class="product-media">
           <img
             class="product-img"
@@ -31,38 +37,80 @@
         </div>
 
         <div class="product-info">
-          <h3 class="product-name">{{ p.name|e }}</h3>
-          <p class="sku muted">SKU: {{ p.sku|e }}</p>
 
-          {# ---------- PRICE BLOCK WITH DISCOUNTS ---------- #}
-          {% if p.discount_percent is defined and p.discount_percent %}
+          <h3 class="product-name">
+            {{ p.name|e }}
+          </h3>
+
+          <p class="sku muted">
+            SKU: {{ p.sku|e }}
+          </p>
+
+          {# ---------- PRICE BLOCK ---------- #}
+
+          {% if p.discount_percent and p.discount_percent > 0 %}
+
             {% set old = "%.2f"|format(p.price) %}
-            {% set new = "%.2f"|format(p.final_price()) %}
+            {% set new = "%.2f"|format(
+              p.price * (1 - p.discount_percent / 100)
+            ) %}
+
             <p class="price">
-              <span class="old-price">{{ old }} грн</span>
-              <span class="new-price">{{ new }} грн</span>
-              <span class="discount-tag">-{{ p.discount_percent }}%</span>
+              <span class="old-price">
+                {{ old }} грн
+              </span>
+
+              <span class="new-price">
+                {{ new }} грн
+              </span>
+
+              <span class="discount-tag">
+                -{{ p.discount_percent }}%
+              </span>
             </p>
+
           {% else %}
-            <p class="price">{{ '%.2f'|format(p.price) }} грн</p>
+
+            <p class="price">
+              {{ "%.2f"|format(p.price) }} грн
+            </p>
+
           {% endif %}
 
           {% if p.description %}
-            <p class="desc">{{ p.description|e }}</p>
+            <p class="desc">
+              {{ p.description|e }}
+            </p>
           {% endif %}
+
         </div>
 
         {# ---------- FOOTER ---------- #}
+
         <div class="product-footer">
 
-          <p class="stock {% if p.stock_qty == 0 %}out-of-stock{% endif %}">
-            В наявності: {{ p.stock_qty }}
+          <p class="stock {% if p.stock == 0 %}out-of-stock{% endif %}">
+            В наявності: {{ p.stock }}
           </p>
 
-          <form method="post" action="/cart/add" class="add-form">
-            <input type="hidden" name="product_id" value="{{ p.id }}">
+          <form
+            method="post"
+            action="/cart/add"
+            class="add-form"
+          >
 
-            <label class="visually-hidden" for="qty-{{ p.id }}">Кількість</label>
+            <input
+              type="hidden"
+              name="product_id"
+              value="{{ p.id }}"
+            >
+
+            <label
+              class="visually-hidden"
+              for="qty-{{ p.id }}"
+            >
+              Кількість
+            </label>
 
             <input
               id="qty-{{ p.id }}"
@@ -71,25 +119,40 @@
               name="qty"
               value="1"
               min="1"
-              {% if p.stock_qty %}max="{{ p.stock_qty }}"{% endif %}
-              {% if p.stock_qty == 0 %}disabled{% endif %}
+
+              {% if p.stock %}
+                max="{{ p.stock }}"
+              {% endif %}
+
+              {% if p.stock == 0 %}
+                disabled
+              {% endif %}
             >
 
             <button
               class="btn"
               type="submit"
-              {% if p.stock_qty == 0 %}disabled aria-disabled="true"{% endif %}
+
+              {% if p.stock == 0 %}
+                disabled
+                aria-disabled="true"
+              {% endif %}
+
               aria-label="Додати «{{ p.name|e }}» до кошика"
             >
-              {% if p.stock_qty == 0 %}
+
+              {% if p.stock == 0 %}
                 Немає в наявності
               {% else %}
                 Додати в кошик
               {% endif %}
+
             </button>
+
           </form>
 
         </div>
+
       </div>
     {% endfor %}
 
